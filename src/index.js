@@ -10,7 +10,7 @@ const requestJSON = requestFactory({
   // debug: true,
   cheerio: false,
   json: true,
-  jar 
+  jar
 })
 const requestHTML = requestFactory({
   // debug: true,
@@ -43,16 +43,7 @@ async function start(fields, cozyParameters) {
   const $ = resp.body.replace(/ /g, '')
   log('info', 'Parsing list of documents')
   const cookies = resp.caseless.dict['set-cookie']
-  const documents = await parseBills($, cookies)
-
-  log('info', 'Saving data to Cozy')
-  await this.saveBills(documents, fields, {
-    fileIdAttribute: ['vendorRef'],
-    identifiers: ['ChargeMap'],
-    sourceAccount: fields.login,
-    sourceAcountIdentifier: fields.login,
-    contentType: 'application/pdf'
-  })
+  const documents = await saveFiles.bind(this)($, fields)
 }
 
 async function authenticate(username, password) {
@@ -68,9 +59,8 @@ async function authenticate(username, password) {
   })
 }
 
-async function parseBills($, predis) {
+async function saveFiles($, fields) {
   const numberOfInvoices = $.match(/(<divclass="invoice-line">)/g)
-  let invoices = []
   const vendorRefs = $.match(/invoice\/(\d*)/g)
   const fileurls = $.match(
     /https:\/\/fr\.chargemap\.com\/user\/invoice\/(\d*)/g
@@ -80,25 +70,29 @@ async function parseBills($, predis) {
 
   for (let i = 0; i < numberOfInvoices.length; i++) {
     log('debug', fileurls[i])
-    const file = await requestJSON(fileurls[i])
-    invoices.push({
-      // fileurl: fileurls[i],
-      filename: `${dates[i].split('du')[1]}_chargemap_facture_${
-        vendorRefs[i].split('/')[1]
-      }.pdf`,
-      filestream: file,
-      amount: parseFloat(amounts[i].match(/(\d)*\.(\d)*/g)[0]),
-      date: dates[i].split('du')[1],
-      vendor: 'fr.chargemap.com',
-      vendorRef: vendorRefs[i].split('/')[1],
-      currency: 'EUR',
-      requestOptions: {
-        requestInstance: requestJSON
+    await this.saveFiles(
+      [
+        {
+          filename: `${dates[i].split('du')[1]}_chargemap_facture_${
+            vendorRefs[i].split('/')[1]
+          }.pdf`,
+          filestream: requestJSON(fileurls[i]),
+          amount: parseFloat(amounts[i].match(/(\d)*\.(\d)*/g)[0]),
+          date: dates[i].split('du')[1],
+          vendor: 'fr.chargemap.com',
+          vendorRef: vendorRefs[i].split('/')[1],
+          currency: 'EUR'
+        }
+      ],
+      fields,
+      {
+        fileIdAttribute: ['vendorRef'],
+        identifiers: ['ChargeMap'],
+        sourceAccount: fields.login,
+        sourceAcountIdentifier: fields.login
       }
-    })
+    )
   }
-
-  return invoices
 }
 
 async function generatePDF(entry) {
