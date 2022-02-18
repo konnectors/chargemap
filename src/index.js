@@ -1,10 +1,5 @@
-const {
-  BaseKonnector,
-  requestFactory,
-  log,
-  createCozyPDFDocument,
-  htmlToPDF
-} = require('cozy-konnector-libs')
+const { BaseKonnector, requestFactory, log } = require('cozy-konnector-libs')
+const { toDate } = require('date-fns')
 let jar = require('request').jar()
 const requestJSON = requestFactory({
   // debug: true,
@@ -12,14 +7,7 @@ const requestJSON = requestFactory({
   json: true,
   jar
 })
-const requestHTML = requestFactory({
-  // debug: true,
-  cheerio: true,
-  json: false,
-  jar
-})
 
-const VENDOR = 'ChargeMap'
 const baseUrl = 'https://fr.chargemap.com'
 
 module.exports = new BaseKonnector(start)
@@ -42,12 +30,11 @@ async function start(fields, cozyParameters) {
   })
   const $ = resp.body.replace(/ /g, '')
   log('info', 'Parsing list of documents')
-  const cookies = resp.caseless.dict['set-cookie']
-  const documents = await saveFiles.bind(this)($, fields)
+  await saveFiles.bind(this)($, fields)
 }
 
 async function authenticate(username, password) {
-  const resp = await requestJSON({
+  await requestJSON({
     url: `${baseUrl}/json/signin/index`,
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -70,15 +57,22 @@ async function saveFiles($, fields) {
 
   for (let i = 0; i < numberOfInvoices.length; i++) {
     log('debug', fileurls[i])
-    await this.saveFiles(
+    const getDate = dates[i].split('du')[1].split('/')
+    const day = parseInt(getDate[0]) + 1
+    const month = parseInt(getDate[1]) - 1
+    const year = parseInt(getDate[2])
+    const date = toDate(new Date(year, month, day), 'yyyy-MM-dd')
+    await this.saveBills(
       [
         {
-          filename: `${dates[i].split('du')[1]}_chargemap_facture_${
+          filename: `${dates[i]
+            .split('du')[1]
+            .replace(/\//g, '-')}_chargemap_facture_${
             vendorRefs[i].split('/')[1]
           }.pdf`,
           filestream: requestJSON(fileurls[i]),
           amount: parseFloat(amounts[i].match(/(\d)*\.(\d)*/g)[0]),
-          date: dates[i].split('du')[1],
+          date: date,
           vendor: 'fr.chargemap.com',
           vendorRef: vendorRefs[i].split('/')[1],
           currency: 'EUR'
@@ -93,20 +87,4 @@ async function saveFiles($, fields) {
       }
     )
   }
-}
-
-async function generatePDF(entry) {
-  log('debug', entry)
-  const url = `${entry}`
-  const doc = createCozyPDFDocument(
-    'Généré automatiquement par le connecteur ChargeMap depuis la page',
-    url
-  )
-  // const $ = await requestJSON(`${url}`)
-  // htmlToPDF($, doc, $('body'), {
-  //   baseURL: url
-  // })
-  doc.end()
-  log('debug', doc)
-  return doc
 }
