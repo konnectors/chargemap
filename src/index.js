@@ -1,8 +1,21 @@
-const { BaseKonnector, requestFactory, log } = require('cozy-konnector-libs')
+process.env.SENTRY_DSN =
+  process.env.SENTRY_DSN ||
+  'https://b27bfb505ab9402f9fc52b8fd48c2287@errors.cozycloud.cc/29'
+
+const {
+  BaseKonnector,
+  requestFactory,
+  log,
+  cozyClient
+} = require('cozy-konnector-libs')
 const { toDate } = require('date-fns')
 let jar = require('request').jar()
+
+const models = cozyClient.new.models
+const { Qualification } = models.document
+
 const requestJSON = requestFactory({
-  // debug: true,
+  debug: false,
   cheerio: false,
   json: true,
   jar
@@ -75,7 +88,18 @@ async function saveFiles($, fields) {
           date: date,
           vendor: 'fr.chargemap.com',
           vendorRef: vendorRefs[i].split('/')[1],
-          currency: 'EUR'
+          currency: 'EUR',
+          fileAttributes: {
+            metadata: {
+              contentAuthor: 'fr.chargemap.com',
+              issueDate: date,
+              datetime: toDate(new Date()),
+              datetimeLabel: `issueDate`,
+              isSubscription: true,
+              carbonCopy: true,
+              qualification: Qualification.getByLabel('transport_invoice')
+            }
+          }
         }
       ],
       fields,
