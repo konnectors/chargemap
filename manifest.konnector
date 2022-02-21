@@ -46,8 +46,8 @@
   "langs": ["fr", "en"],
   "locales": {
     "fr": {
-      "short_description": "Récupère la liste de livres",
-      "long_description": "Récupère la liste de livre sur le site exemple",
+      "short_description": "Récupère vos factures de recharge de véhicule électrique.",
+      "long_description": "ChargeMap est une application de localisation de bornes de rechargement pour véhicule éléctrique. Le Connecteur se connecte avec les identifiant fournis et vous rapatrie l'intégralité des factures dont vous disposez sur votre compte.",
       "permissions": {
         "carboncopy": {
           "description": "Utilisé pour certifier que vos fichiers sont copie conforme avec les documents d'origine"
@@ -67,8 +67,8 @@
       }
     },
     "en": {
-      "short_description": "Fetch a list of books",
-      "long_description": "Fetch a list of books from the example website",
+      "short_description": "Fetch your electric vehicle charges bills from ChargeMap",
+      "long_description": "ChargeMap is a charging stations localisation application for electric vehicles. The konnector will connect with the provided credentials and fetch every ChargeMap bills you have on your account.",
       "permissions": {
         "carboncopy": {
           "description": "Use to certify your files are the exact copy of the originals"
