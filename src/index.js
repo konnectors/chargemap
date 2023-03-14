@@ -104,7 +104,7 @@ async function saveFiles($, fields) {
       ],
       fields,
       {
-        fileIdAttribute: ['vendorRef'],
+        fileIdAttributes: ['vendorRef'],
         identifiers: ['ChargeMap'],
         sourceAccount: fields.login,
         sourceAcountIdentifier: fields.login
