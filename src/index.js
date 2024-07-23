@@ -66,11 +66,27 @@ async function saveFiles($, fields) {
     /https:\/\/fr\.chargemap\.com\/user\/invoice\/(\d*)/g
   )
   const amounts = $.match(/[\d]*\.[\d]*€/g)
-  const dates = $.match(/(Facturedu([\d]{2})\/([\d]{2})\/([\d]{4}))/g)
+  const dates = $.match(/(([\d]{2})\/([\d]{2})\/([\d]{4}))/g)
 
+  if (!numberOfInvoices) {
+    log('warn', 'No invoices')
+    return false
+  }
+  if (!vendorRefs) {
+    log('warn', 'No vendor refs')
+  }
+  if (!fileurls) {
+    log('warn', 'No files')
+  }
+  if (!amounts) {
+    log('warn', 'No amounts')
+  }
+  if (!dates) {
+    log('warn', 'No dates')
+  }
   for (let i = 0; i < numberOfInvoices.length; i++) {
     log('debug', fileurls[i])
-    const getDate = dates[i].split('du')[1].split('/')
+    const getDate = dates[i].split('/')
     const day = parseInt(getDate[0]) + 1
     const month = parseInt(getDate[1]) - 1
     const year = parseInt(getDate[2])
@@ -79,7 +95,6 @@ async function saveFiles($, fields) {
       [
         {
           filename: `${dates[i]
-            .split('du')[1]
             .replace(/\//g, '-')}_chargemap_facture_${
             vendorRefs[i].split('/')[1]
           }.pdf`,
